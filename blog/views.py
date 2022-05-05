@@ -10,18 +10,17 @@ from rest_framework.views import APIView
 
 from blog.serializers import *
 from blog.models import Post
-
+import logging
+logger = logging.getLogger(__name__)
 
 class SignUpView(APIView):
 
     def post(self, request):
         serializer = UserSerializerToCreate(data=request.data)
         if serializer.is_valid():
-            print('success')
             serializer.save()
             return Response(serializer.data)
         else:
-            print('invalid..')
             print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -37,8 +36,6 @@ def make_profile(request):
         else:
             print(serializer.errors)
         return Response(serializer.errors)
-    # if request.method == 'PUT':
-    #     serializer = ProfileSerializer(data=request.data)
 
 
 @api_view(['GET', 'PATCH'])
@@ -64,6 +61,7 @@ def get_profile(request, pk):
 
 class PostView(APIView):
     parser_classes = (MultiPartParser, FormParser)
+    logger.error('Attempting to get posts')
 
     def get(self, request, *args, **kwargs):
         posts = Post.objects.all()
@@ -130,12 +128,12 @@ def post_detail(request, pk):
     try:
         post = Post.objects.get(id=pk)
     except Post.DoesNotExist as e:
+        logger.error('Post doesnt exist')
         return Response({'message': str(e)}, status=400)
     if request.method == 'PUT':
         serializer = PostSerializerToUpdate(instance=post, data=request.data)
         if serializer.is_valid():
             if str(post.author_id) != str(request.user.id):
-                print('someone else attempts to change')
                 return JsonResponse({'error': 'not yours'})
             serializer.save()
             return Response(serializer.data)
@@ -146,7 +144,7 @@ def post_detail(request, pk):
         return Response(serializer.data)
     elif request.method == 'DELETE':
         if str(post.author_id) != str(request.user.id):
-            print('someone else attempts to change your post')
+            logger.error('someone else attempts to change your post')
             return JsonResponse({'error': 'error'})
         post.delete()
 
@@ -184,6 +182,5 @@ def likes(request, pk):
             myLike.delete()
             Comment.objects.filter(id=pk).update(likes_count=F("likes_count")-1)
 
-            print('already liked!')
-            return Response({'error': 'already liked'})
+            logger.error('Already liked')
 

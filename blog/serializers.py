@@ -5,7 +5,6 @@ from django.contrib.auth.models import User
 
 # Model Serializers
 
-
 class UserSerializerToCreate(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     write_only_fields = 'password'
